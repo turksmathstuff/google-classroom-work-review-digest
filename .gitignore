@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Google Apps Script / clasp local config
+.clasp.json
+
+# Editors
+.vscode/
+.idea/
