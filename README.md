@@ -53,6 +53,10 @@ From `CONFIG` in `generateGradingDigest()`:
 - The script uses `teacherId: "me"` and sends to `Session.getActiveUser().getEmail()`, so it runs for the account that authorizes it.
 - Each teacher should authorize the script with their own Google account and create their own trigger.
 
+## Screenshot
+
+![Example Grading Digest Email](example.png)
+
 ## Notes
 
 - Digest is sent to `Session.getActiveUser().getEmail()`.
