@@ -42,19 +42,23 @@ From `CONFIG` in `generateGradingDigest()`:
 ## Setup
 
 1. Open a Google Apps Script project and paste `Code.gs`.
-2. In Apps Script, enable Advanced Google service `Classroom API`.
-3. In Google Cloud for the linked project, enable `Google Classroom API`.
+2. In Apps Script, open **Services** and add `Google Classroom API`.
+3. If prompted, allow/enable the linked Google Cloud API access (usually guided automatically).
 4. Run `generateGradingDigest()` once manually and approve permissions.
 5. Add a time-driven trigger for `generateGradingDigest()` (for example, weekdays each morning).
+
+## Using This As Another Teacher
+
+- No personal email or user ID is hard-coded.
+- The script uses `teacherId: "me"` and sends to `Session.getActiveUser().getEmail()`, so it runs for the account that authorizes it.
+- Each teacher should authorize the script with their own Google account and create their own trigger.
 
 ## Notes
 
 - Digest is sent to `Session.getActiveUser().getEmail()`.
 - Due dates without a due time are treated as due at `23:59`.
 - Assignments without due dates are excluded by default.
-- The email includes a hard-coded sync link:
-`chrome-extension://glimpkgmjbhcfgihnjlmiapadhjbbmej/dashboard.html`
-Update or remove this in `buildDigestHtmlV2_()` if needed.
+- The digest includes this plain instruction line: `Use Classroom SIS Export extension to synch to SIS.`
 
 ## File
 
