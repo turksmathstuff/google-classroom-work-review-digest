@@ -18,6 +18,9 @@ function generateGradingDigest() {
 
   const myEmail = Session.getActiveUser().getEmail();
   const now = new Date();
+  const cutoff = CONFIG.lookbackDays != null
+    ? new Date(now.getTime() - CONFIG.lookbackDays * 24 * 60 * 60 * 1000)
+    : null;
   const tz = Session.getScriptTimeZone();
   const isoDay = Number(Utilities.formatDate(now, tz, "u")); // 1=Mon ... 7=Sun
   if (isoDay >= 6) return; // skip Saturday/Sunday
@@ -31,7 +34,11 @@ function generateGradingDigest() {
   const items = [];
 
   for (const course of courses) {
-    const courseWork = listAllCourseWork_(course.id);
+    const courseWork = listAllCourseWork_(course.id, {
+      cutoff,
+      config: CONFIG,
+      stopWhenOlder: !!cutoff && !CONFIG.includeUndated
+    });
     if (!courseWork.length) continue;
 
     // Roster count (true student count)
@@ -45,10 +52,7 @@ function generateGradingDigest() {
       const dueAt = getDueDateTime_(work, CONFIG);
       if (!dueAt && !CONFIG.includeUndated) continue;
 
-      if (dueAt && CONFIG.lookbackDays != null) {
-        const cutoff = new Date(now.getTime() - CONFIG.lookbackDays * 24 * 60 * 60 * 1000);
-        if (dueAt < cutoff) continue;
-      }
+      if (dueAt && cutoff && dueAt < cutoff) continue;
 
       const submissions = listAllStudentSubmissions_(course.id, work.id);
       if (!submissions.length) continue;
@@ -227,12 +231,31 @@ function listAllCourses_(params) {
   return out;
 }
 
-function listAllCourseWork_(courseId) {
+function listAllCourseWork_(courseId, options) {
+  options = options || {};
+  const cutoff = options.cutoff || null;
+  const config = options.config || { assumeDueTimeHHMM: { hour: 23, minute: 59 } };
+  const stopWhenOlder = !!options.stopWhenOlder && !!cutoff;
+
   const out = [];
   let pageToken;
   do {
-    const resp = Classroom.Courses.CourseWork.list(courseId, { pageToken });
-    if (resp && resp.courseWork) out.push(...resp.courseWork);
+    const resp = Classroom.Courses.CourseWork.list(courseId, { pageToken, orderBy: "dueDate desc" });
+    const pageItems = (resp && resp.courseWork) ? resp.courseWork : [];
+    let reachedOlderCutoff = false;
+
+    for (const work of pageItems) {
+      out.push(work);
+
+      if (!stopWhenOlder) continue;
+      const dueAt = getDueDateTime_(work, config);
+      if (dueAt && dueAt < cutoff) {
+        reachedOlderCutoff = true;
+        break;
+      }
+    }
+
+    if (reachedOlderCutoff) break;
     pageToken = resp.nextPageToken;
   } while (pageToken);
   return out;
@@ -290,7 +313,6 @@ function getDueDateTime_(work, config) {
 function buildDigestHtmlV2_(items, now) {
   const tz = Session.getScriptTimeZone();
   const nowStr = Utilities.formatDate(now, tz, "EEE MMM d, yyyy h:mm a");
-  const syncUrl = "chrome-extension://glimpkgmjbhcfgihnjlmiapadhjbbmej/dashboard.html";
 
   const rows = items.map(it => {
     const dueStr = it.dueAt ? Utilities.formatDate(it.dueAt, tz, "EEE MMM d, yyyy h:mm a") : "No due date";
