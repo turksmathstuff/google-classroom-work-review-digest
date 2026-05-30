@@ -53,6 +53,21 @@ From `CONFIG` in `generateGradingDigest()`:
 - The script uses `teacherId: "me"` and sends to `Session.getActiveUser().getEmail()`, so it runs for the account that authorizes it.
 - Each teacher should authorize the script with their own Google account and create their own trigger.
 
+## New School Year Notes / Troubleshooting
+
+In most cases, no code changes should be necessary for a new school year.
+The script pulls your `ACTIVE` courses dynamically and runs as the account that authorized it.
+
+If it stops working, check these first:
+
+1. In Apps Script, run `generateGradingDigest()` manually once and confirm all permission prompts are approved.
+2. Confirm **Google Classroom API** is still added under **Services** in the script project.
+3. Verify your time-driven trigger for `generateGradingDigest()` still exists and is enabled.
+4. Check the script time zone and trigger run time in Apps Script settings.
+5. Confirm your new classes are in `ACTIVE` state and you are listed as a teacher.
+6. If digest emails are unexpectedly empty, review `lookbackDays` (default `5`) and `onlyPastDue` (default `true`) in `CONFIG`.
+7. Check the Apps Script **Executions** log for the latest error message and re-authorize the script if prompted.
+
 ## Screenshot
 
 ![Example Grading Digest Email](example.png)
